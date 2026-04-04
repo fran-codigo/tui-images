@@ -1,0 +1,26 @@
+# Binario compilado
+tui-images
+*.exe
+
+# Build artifacts
+/dist
+/build
+
+# IDE / Editores
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Go test coverage
+*.cover
+*.out
+
+# Temp files
+tmp/
+temp/
