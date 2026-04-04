@@ -39,7 +39,7 @@ sudo cp tui-images /usr/local/bin/
 ### Con `go install`
 
 ```bash
-go install github.com/fran/tui-images/cmd@latest
+go install github.com/fran-codigo/tui-images/cmd@latest
 ```
 
 ## Uso

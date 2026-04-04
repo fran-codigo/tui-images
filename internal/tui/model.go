@@ -6,7 +6,7 @@ import (
 	"github.com/charmbracelet/bubbles/filepicker"
 	"github.com/charmbracelet/bubbles/progress"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/fran/tui-images/internal/compressor"
+	"github.com/fran-codigo/tui-images/internal/compressor"
 )
 
 type State int

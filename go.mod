@@ -1,4 +1,4 @@
-module github.com/fran/tui-images
+module github.com/fran-codigo/tui-images
 
 go 1.26.1
 

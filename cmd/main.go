@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/fran/tui-images/internal/tui"
+	"github.com/fran-codigo/tui-images/internal/tui"
 )
 
 var version = "dev"
