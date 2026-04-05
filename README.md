@@ -20,6 +20,33 @@ TUI (Terminal User Interface) para comprimir imágenes de forma rápida y sencil
 
 ## Instalación
 
+### Instalación automática (recomendado)
+
+#### Linux / macOS
+
+```bash
+# Desde el repositorio
+./install.sh
+
+# O con un solo comando (requiere curl)
+curl -fsSL https://raw.githubusercontent.com/fran-codigo/tui-images/main/install.sh | bash
+```
+
+#### Windows (PowerShell)
+
+```powershell
+# Desde el repositorio
+.\install.ps1
+
+# O con un solo comando
+powershell -ExecutionPolicy Bypass -File install.ps1
+```
+
+> **Nota en Windows**: Si el script no se ejecuta por políticas de ejecución, abre PowerShell como administrador y ejecuta:
+> ```powershell
+> Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+> ```
+
 ### Desde el código fuente
 
 ```bash
@@ -29,11 +56,14 @@ cd tui-images
 # Instalar dependencias
 go mod tidy
 
-# Compilar
+# Compilar e instalar
 go build -o tui-images ./cmd/main.go
 
-# Instalar globalmente (opcional)
-sudo cp tui-images /usr/local/bin/
+# Linux/macOS: copiar al PATH
+sudo cp tui-images /usr/local/bin/   # o copiar a ~/.local/bin/ sin sudo
+
+# Windows: copiar al directorio Go bin
+copy tui-images.exe %USERPROFILE%\go\bin\
 ```
 
 ### Con `go install`
@@ -41,6 +71,39 @@ sudo cp tui-images /usr/local/bin/
 ```bash
 go install github.com/fran-codigo/tui-images/cmd@latest
 ```
+
+> El binario se instala en `$GOPATH/bin` (Linux/macOS) o `%GOPATH%\bin` (Windows).
+> Asegúrate de que este directorio esté en tu `PATH`.
+
+### Ejecutar sin instalar
+
+```bash
+go run ./cmd/main.go
+```
+
+## Solución de problemas
+
+### Windows: "El término 'tui-images' no se reconoce"
+
+El ejecutable no está en tu `PATH`. Soluciones:
+
+1. **Ejecuta el instalador**: `.\install.ps1` (agrega automáticamente el directorio al PATH)
+2. **Agrega manualmente al PATH**:
+   ```powershell
+   $env:PATH += ";$env:USERPROFILE\go\bin"
+   # Para hacerlo permanente:
+   [Environment]::SetEnvironmentVariable("Path", "$env:PATH;$env:USERPROFILE\go\bin", "User")
+   ```
+3. **Reinicia la terminal** después de cambiar el PATH
+
+### Linux/macOS: "command not found"
+
+1. **Verifica la instalación**: `ls ~/.local/bin/tui-images` o `ls /usr/local/bin/tui-images`
+2. **Agrega al PATH** si es necesario:
+   ```bash
+   export PATH="$HOME/.local/bin:$PATH"
+   # Agrega esta línea a ~/.bashrc o ~/.zshrc para hacerlo permanente
+   ```
 
 ## Uso
 
@@ -98,6 +161,8 @@ tui-images/
 │       ├── model.go         # Modelo Bubbletea
 │       ├── update.go        # Manejo de eventos
 │       └── view.go          # Renderizado UI con Lipgloss
+├── install.sh               # Script de instalación (Linux/macOS)
+├── install.ps1              # Script de instalación (Windows)
 ├── go.mod
 └── go.sum
 ```

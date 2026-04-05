@@ -1,6 +1,6 @@
 module github.com/fran-codigo/tui-images
 
-go 1.26.1
+go 1.21
 
 require (
 	github.com/charmbracelet/bubbles v1.0.0
