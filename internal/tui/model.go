@@ -2,6 +2,7 @@ package tui
 
 import (
 	"os"
+	"path/filepath"
 
 	"github.com/charmbracelet/bubbles/filepicker"
 	"github.com/charmbracelet/bubbles/progress"
@@ -104,7 +105,9 @@ func runCompression(inputPath, outputPath string, quality int, mode Mode) tea.Cm
 			if err != nil {
 				return CompressSingleMsg{Err: err}
 			}
-			dstSize := getFileSize(outputPath)
+			outputDir := filepath.Dir(outputPath)
+			relPath := filepath.Base(outputPath)
+			dstSize, _ := compressor.FindOutputFile(outputDir, relPath)
 			return CompressSingleMsg{
 				SrcSize: srcSize,
 				DstSize: dstSize,

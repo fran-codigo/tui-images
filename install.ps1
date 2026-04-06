@@ -45,6 +45,9 @@ Write-Info "Building tui-images..."
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
 Set-Location $ScriptDir
 
+# Ensure go.mod and go.sum are in sync (handles version mismatches after clone)
+go mod tidy
+
 go build -ldflags="-s -w" -o $BinaryName ./cmd/main.go
 
 if (-not (Test-Path $BinaryName)) {

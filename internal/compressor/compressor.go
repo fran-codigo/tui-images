@@ -175,7 +175,7 @@ func CompressDirectory(inputDir, outputDir string, quality int, progress chan<- 
 		}
 
 		srcInfo, _ := os.Stat(file)
-		dstSize, _ := findOutputFile(outputDir, relPath)
+		dstSize, _ := FindOutputFile(outputDir, relPath)
 		srcSize := srcInfo.Size()
 		var saved float64
 		if srcSize > 0 {
@@ -197,7 +197,7 @@ func CompressDirectory(inputDir, outputDir string, quality int, progress chan<- 
 	return nil
 }
 
-func findOutputFile(outputDir, relPath string) (int64, error) {
+func FindOutputFile(outputDir, relPath string) (int64, error) {
 	path := filepath.Join(outputDir, relPath)
 	if info, err := os.Stat(path); err == nil {
 		return info.Size(), nil
