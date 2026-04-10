@@ -72,14 +72,19 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	// Handle other states
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "q", "ctrl+c":
-			return m, tea.Quit
-		case "esc":
-			return m.handleEsc()
-		case "enter":
-			return m.handleEnter()
-		case "tab":
+		switch msg.Type {
+		case tea.KeyRunes:
+			if len(msg.Runes) > 0 {
+				r := msg.Runes[0]
+				if m.state == StateSelectMode {
+					if r == 'f' || r == 'F' {
+						m.mode = ModeFile
+					} else if r == 'd' || r == 'D' {
+						m.mode = ModeDir
+					}
+				}
+			}
+		case tea.KeyTab:
 			if m.state == StateSelectMode {
 				if m.mode == ModeFile {
 					m.mode = ModeDir
@@ -87,6 +92,16 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.mode = ModeFile
 				}
 			}
+		case tea.KeyEnter:
+			return m.handleEnter()
+		case tea.KeyEsc:
+			return m.handleEsc()
+		case tea.KeyCtrlC:
+			return m, tea.Quit
+		}
+
+		if msg.String() == "q" || msg.String() == "ctrl+c" {
+			return m, tea.Quit
 		}
 
 	case tea.WindowSizeMsg:
