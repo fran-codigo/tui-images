@@ -8,11 +8,15 @@ import (
 )
 
 var (
-	titleStyle = lipgloss.NewStyle().
+	headerStyle = lipgloss.NewStyle().
 			Bold(true).
 			Foreground(lipgloss.Color("#FAFAFA")).
 			Background(lipgloss.Color("#7D56F4")).
-			Padding(0, 1).
+			Padding(0, 2)
+
+	headerSubStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#AAAAAA")).
+			MarginTop(1).
 			MarginBottom(1)
 
 	subtitleStyle = lipgloss.NewStyle().
@@ -79,8 +83,10 @@ func formatBytes(b int64) string {
 func (m Model) View() string {
 	var s strings.Builder
 
-	s.WriteString(titleStyle.Render("  Image Compressor  "))
-	s.WriteString("\n\n")
+	s.WriteString(headerStyle.Render("tui-images"))
+	s.WriteString("\n")
+	s.WriteString(headerSubStyle.Render("Image compression from your terminal"))
+	s.WriteString("\n")
 
 	switch m.state {
 	case StateSelectMode:
@@ -96,7 +102,7 @@ func (m Model) View() string {
 		}
 		s.WriteString(fileOpt + dirOpt)
 		s.WriteString("\n\n")
-		s.WriteString(promptStyle.Render("Press Enter to confirm, Tab to switch, Q to quit"))
+		s.WriteString(promptStyle.Render("F file  D directory  Enter confirm  Tab switch  Q quit"))
 
 	case StateFilePick, StateDirPick:
 		label := "Select an image file"

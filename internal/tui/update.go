@@ -17,7 +17,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	// Handle quality input state
 	if m.state == StateQualityInput {
 		if km, ok := msg.(tea.KeyMsg); ok {
-			switch km.String() {
+			switch keyName(km) {
 			case "q", "ctrl+c":
 				return m, tea.Quit
 			case "esc":
@@ -57,7 +57,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		// Handle keys for picker state
 		if km, ok := msg.(tea.KeyMsg); ok {
-			switch km.String() {
+			switch keyName(km) {
 			case "q", "ctrl+c":
 				return m, tea.Quit
 			case "esc":
@@ -73,19 +73,15 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	// Handle other states
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		switch msg.Type {
-		case tea.KeyRunes:
-			if len(msg.Runes) > 0 {
-				r := msg.Runes[0]
-				if m.state == StateSelectMode {
-					if r == 'f' || r == 'F' {
-						m.mode = ModeFile
-					} else if r == 'd' || r == 'D' {
-						m.mode = ModeDir
-					}
-				}
-			}
-		case tea.KeyTab:
+		key := keyName(msg)
+		switch key {
+		case "q", "ctrl+c":
+			return m, tea.Quit
+		case "esc":
+			return m.handleEsc()
+		case "enter":
+			return m.handleEnter()
+		case "tab":
 			if m.state == StateSelectMode {
 				if m.mode == ModeFile {
 					m.mode = ModeDir
@@ -93,16 +89,14 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.mode = ModeFile
 				}
 			}
-		case tea.KeyEnter:
-			return m.handleEnter()
-		case tea.KeyEsc:
-			return m.handleEsc()
-		case tea.KeyCtrlC:
-			return m, tea.Quit
-		}
-
-		if msg.String() == "q" || msg.String() == "ctrl+c" {
-			return m, tea.Quit
+		case "f":
+			if m.state == StateSelectMode {
+				return m.startPicker(ModeFile)
+			}
+		case "d":
+			if m.state == StateSelectMode {
+				return m.startPicker(ModeDir)
+			}
 		}
 
 	case tea.WindowSizeMsg:
@@ -179,19 +173,33 @@ func (m Model) handleEsc() (Model, tea.Cmd) {
 	return m, nil
 }
 
+func keyName(msg tea.KeyMsg) string {
+	if msg.Type == tea.KeyRunes && len(msg.Runes) == 1 {
+		return strings.ToLower(string(msg.Runes[0]))
+	}
+	return msg.String()
+}
+
+func (m Model) startPicker(mode Mode) (Model, tea.Cmd) {
+	m.mode = mode
+	m.inputPath = ""
+	m.filePicker.Path = ""
+	if mode == ModeFile {
+		m.state = StateFilePick
+		m.filePicker.FileAllowed = true
+		m.filePicker.DirAllowed = false
+	} else {
+		m.state = StateDirPick
+		m.filePicker.FileAllowed = false
+		m.filePicker.DirAllowed = true
+	}
+	return m, m.filePicker.Init()
+}
+
 func (m Model) handleEnter() (Model, tea.Cmd) {
 	switch m.state {
 	case StateSelectMode:
-		if m.mode == ModeFile {
-			m.state = StateFilePick
-			m.filePicker.FileAllowed = true
-			m.filePicker.DirAllowed = false
-		} else {
-			m.state = StateDirPick
-			m.filePicker.FileAllowed = false
-			m.filePicker.DirAllowed = true
-		}
-		return m, m.filePicker.Init()
+		return m.startPicker(m.mode)
 
 	case StateQualityInput:
 		q, err := strconv.Atoi(m.qualityInput)
