@@ -46,7 +46,7 @@ info "Using Go $GO_VERSION"
 # Build
 info "Building $BINARY_NAME..."
 cd "$REPO_DIR"
-go build -ldflags="-s -w" -o "$BINARY_NAME" ./cmd/main.go
+go build -ldflags="-s -w" -o "$BINARY_NAME" .
 
 # Install
 info "Installing to $INSTALL_DIR/$BINARY_NAME..."

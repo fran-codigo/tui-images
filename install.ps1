@@ -48,7 +48,7 @@ Set-Location $ScriptDir
 # Ensure go.mod and go.sum are in sync (handles version mismatches after clone)
 go mod tidy
 
-go build -ldflags="-s -w" -o $BinaryName ./cmd/main.go
+go build -ldflags="-s -w" -o $BinaryName .
 
 if (-not (Test-Path $BinaryName)) {
     Write-Err "Build failed. Make sure you're running this from the repository root."

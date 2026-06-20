@@ -57,7 +57,7 @@ cd tui-images
 go mod tidy
 
 # Compilar e instalar
-go build -o tui-images ./cmd/main.go
+go build -o tui-images .
 
 # Linux/macOS: copiar al PATH
 sudo cp tui-images /usr/local/bin/   # o copiar a ~/.local/bin/ sin sudo
@@ -69,7 +69,7 @@ copy tui-images.exe %USERPROFILE%\go\bin\
 ### Con `go install`
 
 ```bash
-go install github.com/fran-codigo/tui-images/cmd@latest
+go install github.com/fran-codigo/tui-images@latest
 ```
 
 > El binario se instala en `$GOPATH/bin` (Linux/macOS) o `%GOPATH%\bin` (Windows).
@@ -78,7 +78,7 @@ go install github.com/fran-codigo/tui-images/cmd@latest
 ### Ejecutar sin instalar
 
 ```bash
-go run ./cmd/main.go
+go run .
 ```
 
 ## Solución de problemas
@@ -153,7 +153,8 @@ tui-images -q 50        # Calidad 50%
 ```
 tui-images/
 ├── cmd/
-│   └── main.go              # Entry point, parse de flags
+│   └── main.go              # Entry point legacy
+├── main.go                  # Entry point principal para go install
 ├── internal/
 │   ├── compressor/
 │   │   └── compressor.go    # Lógica de compresión
