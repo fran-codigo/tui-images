@@ -81,6 +81,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m.handleEsc()
 		case "enter":
 			return m.handleEnter()
+		case "c":
+			if m.state == StateDone {
+				return m.continueCompressing()
+			}
 		case "tab":
 			if m.state == StateSelectMode {
 				if m.mode == ModeFile {
@@ -180,10 +184,36 @@ func keyName(msg tea.KeyMsg) string {
 	return msg.String()
 }
 
-func (m Model) startPicker(mode Mode) (Model, tea.Cmd) {
-	m.mode = mode
+func (m Model) resetSession() Model {
+	height := m.filePicker.Height
 	m.inputPath = ""
-	m.filePicker.Path = ""
+	m.outputPath = ""
+	m.qualityInput = ""
+	m.progCurrent = 0
+	m.progTotal = 0
+	m.currentFile = ""
+	m.totalSrcSize = 0
+	m.totalDstSize = 0
+	m.errors = nil
+	m.err = ""
+	m.done = false
+	m.fpConfirmed = false
+	m.filePicker = newFilePicker(m.startDir)
+	m.filePicker.Height = height
+	return m
+}
+
+func (m Model) continueCompressing() (Model, tea.Cmd) {
+	m = m.resetSession()
+	m.state = StateSelectMode
+	return m, m.filePicker.Init()
+}
+
+func (m Model) startPicker(mode Mode) (Model, tea.Cmd) {
+	height := m.filePicker.Height
+	m = m.resetSession()
+	m.filePicker.Height = height
+	m.mode = mode
 	if mode == ModeFile {
 		m.state = StateFilePick
 		m.filePicker.FileAllowed = true
@@ -200,6 +230,8 @@ func (m Model) handleEnter() (Model, tea.Cmd) {
 	switch m.state {
 	case StateSelectMode:
 		return m.startPicker(m.mode)
+	case StateDone:
+		return m.continueCompressing()
 
 	case StateQualityInput:
 		q, err := strconv.Atoi(m.qualityInput)

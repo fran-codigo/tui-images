@@ -174,7 +174,7 @@ func (m Model) View() string {
 			}
 		}
 
-		s.WriteString(helpStyle.Render("Press Q or Esc to exit"))
+		s.WriteString(helpStyle.Render("Enter/C continue compressing  Q/Esc exit"))
 
 	case StateError:
 		s.WriteString(errorStyle.Render("  Error  "))

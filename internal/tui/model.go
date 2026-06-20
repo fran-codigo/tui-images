@@ -37,6 +37,7 @@ type Model struct {
 
 	filePicker  filepicker.Model
 	fpConfirmed bool
+	startDir    string
 
 	inputPath  string
 	outputPath string
@@ -54,10 +55,11 @@ type Model struct {
 }
 
 func InitialModel(quality int) Model {
-	fp := filepicker.New()
-	fp.ShowPermissions = true
-	fp.ShowSize = true
-	fp.AutoHeight = true
+	startDir, err := os.Getwd()
+	if err != nil {
+		startDir = "."
+	}
+	fp := newFilePicker(startDir)
 
 	p := progress.New(progress.WithDefaultGradient())
 
@@ -66,8 +68,18 @@ func InitialModel(quality int) Model {
 		quality:      quality,
 		qualityInput: "",
 		filePicker:   fp,
+		startDir:     startDir,
 		progress:     p,
 	}
+}
+
+func newFilePicker(currentDir string) filepicker.Model {
+	fp := filepicker.New()
+	fp.CurrentDirectory = currentDir
+	fp.ShowPermissions = true
+	fp.ShowSize = true
+	fp.AutoHeight = true
+	return fp
 }
 
 func (m Model) Init() tea.Cmd {
