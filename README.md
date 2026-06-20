@@ -15,7 +15,7 @@ TUI (Terminal User Interface) para comprimir imágenes de forma rápida y sencil
 
 ## Requisitos
 
-- **Go 1.21+** instalado en el sistema
+- **Go 1.25+** instalado en el sistema
 - Terminal compatible (soporta secuencias de escape ANSI)
 
 ## Instalación

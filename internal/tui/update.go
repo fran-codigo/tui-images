@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/fran-codigo/tui-images/internal/compressor"
 )
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -87,6 +88,14 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.mode = ModeFile
 				}
 			}
+		case "f", "F":
+			if m.state == StateSelectMode {
+				m.mode = ModeFile
+			}
+		case "d", "D":
+			if m.state == StateSelectMode {
+				m.mode = ModeDir
+			}
 		}
 
 	case tea.WindowSizeMsg:
@@ -103,13 +112,39 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		} else {
 			m.totalSrcSize = msg.SrcSize
 			m.totalDstSize = msg.DstSize
+			if msg.OutputPath != "" {
+				m.outputPath = msg.OutputPath
+			}
+			m.progCurrent = 1
+			m.progTotal = 1
 			m.state = StateDone
 		}
 
+	case ProgressMsg:
+		p := msg.Progress
+		if p.Total > 0 {
+			m.progTotal = p.Total
+		}
+		m.progCurrent = p.Current
+		if p.CurrentFile != "" {
+			m.currentFile = p.CurrentFile
+		}
+		if p.Error != "" {
+			file := p.CurrentFile
+			if file == "" {
+				file = "compression"
+			}
+			m.errors = append(m.errors, file+": "+p.Error)
+		}
+		m.totalSrcSize += p.SrcSize
+		m.totalDstSize += p.DstSize
+		if p.Done {
+			m.state = StateDone
+			return m, nil
+		}
+		return m, waitForProgress(msg.ch)
+
 	case CompressDirMsg:
-		m.totalSrcSize = msg.TotalSrcSize
-		m.totalDstSize = msg.TotalDstSize
-		m.errors = msg.Errors
 		m.state = StateDone
 	}
 
@@ -165,6 +200,11 @@ func (m Model) handleEnter() (Model, tea.Cmd) {
 		}
 
 		if m.mode == ModeFile {
+			if !compressor.IsSupportedImage(m.inputPath) {
+				m.state = StateError
+				m.err = fmt.Sprintf("Unsupported image format: %s", filepath.Ext(m.inputPath))
+				return m, nil
+			}
 			dir := filepath.Dir(m.inputPath)
 			name := filepath.Base(m.inputPath)
 			ext := filepath.Ext(name)
@@ -177,7 +217,22 @@ func (m Model) handleEnter() (Model, tea.Cmd) {
 		}
 
 		m.state = StateProcessing
-		return m, runCompression(m.inputPath, m.outputPath, m.quality, m.mode)
+		m.progCurrent = 0
+		m.progTotal = 0
+		m.currentFile = ""
+		m.totalSrcSize = 0
+		m.totalDstSize = 0
+		m.errors = nil
+
+		if m.mode == ModeFile {
+			return m, runSingleCompression(m.inputPath, m.outputPath, m.quality)
+		}
+
+		ch := make(chan compressor.Progress)
+		go func() {
+			_ = compressor.CompressDirectory(m.inputPath, m.outputPath, m.quality, ch)
+		}()
+		return m, waitForProgress(ch)
 
 	default:
 		return m, nil

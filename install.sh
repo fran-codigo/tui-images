@@ -40,8 +40,8 @@ if ! command -v go &> /dev/null; then
     exit 1
 fi
 
-GO_VERSION=$(go version | grep -oP 'go\K[0-9]+\.[0-9]+')
-info "Using Go $(go version | grep -oP 'go\K[0-9.]+')"
+GO_VERSION=$(go version | awk '{print $3}' | sed 's/^go//')
+info "Using Go $GO_VERSION"
 
 # Build
 info "Building $BINARY_NAME..."
@@ -54,13 +54,16 @@ cp "$BINARY_NAME" "$INSTALL_DIR/$BINARY_NAME"
 chmod +x "$INSTALL_DIR/$BINARY_NAME"
 
 # Verify PATH
-if ! echo "$PATH" | grep -q "$INSTALL_DIR"; then
+case ":$PATH:" in
+*":$INSTALL_DIR:"*)
+    info "Installation complete! Run '$BINARY_NAME' to start."
+    ;;
+*)
     warn "$INSTALL_DIR is not in your PATH."
     warn "Add it by running: export PATH=\"\$PATH:$INSTALL_DIR\""
     warn "Add this line to your ~/.bashrc or ~/.zshrc to make it permanent."
-else
-    info "Installation complete! Run '$BINARY_NAME' to start."
-fi
+    ;;
+esac
 
 # Cleanup
 rm -f "$REPO_DIR/$BINARY_NAME"

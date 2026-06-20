@@ -71,10 +71,14 @@ func CompressImage(inputPath, outputPath string, quality int) error {
 	case ".png":
 		var bufJpeg, bufPng bytes.Buffer
 
-		jpeg.Encode(&bufJpeg, img, &jpeg.Options{Quality: quality})
+		if err := jpeg.Encode(&bufJpeg, img, &jpeg.Options{Quality: quality}); err != nil {
+			return fmt.Errorf("encoding jpeg candidate: %w", err)
+		}
 
 		pngEnc := png.Encoder{CompressionLevel: png.BestCompression}
-		pngEnc.Encode(&bufPng, img)
+		if err := pngEnc.Encode(&bufPng, img); err != nil {
+			return fmt.Errorf("encoding png candidate: %w", err)
+		}
 
 		var bestData []byte
 		var bestExt string
@@ -127,8 +131,13 @@ func CompressDirectory(inputDir, outputDir string, quality int, progress chan<- 
 			return nil
 		}
 
-		absPath, _ := filepath.Abs(path)
-		if !strings.HasPrefix(absPath, absInput) {
+		absPath, err := filepath.Abs(path)
+		if err != nil {
+			progress <- Progress{Current: 0, Total: 0, CurrentFile: path, Error: "invalid file path", Done: false}
+			return nil
+		}
+		relToInput, err := filepath.Rel(absInput, absPath)
+		if err != nil || relToInput == ".." || strings.HasPrefix(relToInput, ".."+string(os.PathSeparator)) {
 			progress <- Progress{Current: 0, Total: 0, CurrentFile: path, Error: "file outside directory", Done: false}
 			return nil
 		}
@@ -148,6 +157,7 @@ func CompressDirectory(inputDir, outputDir string, quality int, progress chan<- 
 	})
 
 	if err != nil {
+		progress <- Progress{Current: 0, Total: 0, Error: fmt.Sprintf("walking directory: %s", err), Done: true}
 		return fmt.Errorf("walking directory: %w", err)
 	}
 
@@ -174,8 +184,16 @@ func CompressDirectory(inputDir, outputDir string, quality int, progress chan<- 
 			continue
 		}
 
-		srcInfo, _ := os.Stat(file)
-		dstSize, _ := FindOutputFile(outputDir, relPath)
+		srcInfo, err := os.Stat(file)
+		if err != nil {
+			progress <- Progress{Current: i + 1, Total: total, CurrentFile: relPath, Error: err.Error(), Done: false}
+			continue
+		}
+		dstSize, err := FindOutputFile(outputDir, relPath)
+		if err != nil {
+			progress <- Progress{Current: i + 1, Total: total, CurrentFile: relPath, Error: err.Error(), Done: false}
+			continue
+		}
 		srcSize := srcInfo.Size()
 		var saved float64
 		if srcSize > 0 {
@@ -198,22 +216,27 @@ func CompressDirectory(inputDir, outputDir string, quality int, progress chan<- 
 }
 
 func FindOutputFile(outputDir, relPath string) (int64, error) {
+	_, size, err := FindOutputPath(outputDir, relPath)
+	return size, err
+}
+
+func FindOutputPath(outputDir, relPath string) (string, int64, error) {
 	path := filepath.Join(outputDir, relPath)
 	if info, err := os.Stat(path); err == nil {
-		return info.Size(), nil
+		return path, info.Size(), nil
 	}
 
 	jpgPath := strings.TrimSuffix(path, filepath.Ext(path)) + ".jpg"
 	if info, err := os.Stat(jpgPath); err == nil {
-		return info.Size(), nil
+		return jpgPath, info.Size(), nil
 	}
 
 	pngPath := strings.TrimSuffix(path, filepath.Ext(path)) + ".png"
 	if info, err := os.Stat(pngPath); err == nil {
-		return info.Size(), nil
+		return pngPath, info.Size(), nil
 	}
 
-	return 0, fmt.Errorf("output file not found")
+	return "", 0, fmt.Errorf("output file not found")
 }
 
 type Progress struct {

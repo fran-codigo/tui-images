@@ -74,18 +74,21 @@ func (m Model) Init() tea.Cmd {
 	return m.filePicker.Init()
 }
 
-// CompressDirMsg signals directory compression is done
-type CompressDirMsg struct {
-	TotalSrcSize int64
-	TotalDstSize int64
-	Errors       []string
+// ProgressMsg carries a single directory-compression progress update.
+type ProgressMsg struct {
+	Progress compressor.Progress
+	ch       <-chan compressor.Progress
 }
+
+// CompressDirMsg signals directory compression is done.
+type CompressDirMsg struct{}
 
 // CompressSingleMsg signals single file compression is done
 type CompressSingleMsg struct {
-	SrcSize int64
-	DstSize int64
-	Err     error
+	SrcSize    int64
+	DstSize    int64
+	OutputPath string
+	Err        error
 }
 
 func getFileSize(path string) int64 {
@@ -96,45 +99,31 @@ func getFileSize(path string) int64 {
 	return info.Size()
 }
 
-// runCompression runs the compression and sends progress updates
-func runCompression(inputPath, outputPath string, quality int, mode Mode) tea.Cmd {
+func waitForProgress(ch <-chan compressor.Progress) tea.Cmd {
 	return func() tea.Msg {
-		if mode == ModeFile {
-			srcSize := getFileSize(inputPath)
-			err := compressor.CompressImage(inputPath, outputPath, quality)
-			if err != nil {
-				return CompressSingleMsg{Err: err}
-			}
-			outputDir := filepath.Dir(outputPath)
-			relPath := filepath.Base(outputPath)
-			dstSize, _ := compressor.FindOutputFile(outputDir, relPath)
-			return CompressSingleMsg{
-				SrcSize: srcSize,
-				DstSize: dstSize,
-			}
+		p, ok := <-ch
+		if !ok {
+			return CompressDirMsg{}
 		}
+		return ProgressMsg{Progress: p, ch: ch}
+	}
+}
 
-		// Directory mode
-		var totalSrc, totalDst int64
-		var errs []string
-
-		ch := make(chan compressor.Progress)
-		go func() {
-			compressor.CompressDirectory(inputPath, outputPath, quality, ch)
-		}()
-
-		for p := range ch {
-			if p.Error != "" {
-				errs = append(errs, p.CurrentFile+": "+p.Error)
-			}
-			totalSrc += p.SrcSize
-			totalDst += p.DstSize
+// runSingleCompression compresses one file and reports the final sizes.
+func runSingleCompression(inputPath, outputPath string, quality int) tea.Cmd {
+	return func() tea.Msg {
+		srcSize := getFileSize(inputPath)
+		err := compressor.CompressImage(inputPath, outputPath, quality)
+		if err != nil {
+			return CompressSingleMsg{Err: err}
 		}
-
-		return CompressDirMsg{
-			TotalSrcSize: totalSrc,
-			TotalDstSize: totalDst,
-			Errors:       errs,
+		outputDir := filepath.Dir(outputPath)
+		relPath := filepath.Base(outputPath)
+		actualPath, dstSize, _ := compressor.FindOutputPath(outputDir, relPath)
+		return CompressSingleMsg{
+			SrcSize:    srcSize,
+			DstSize:    dstSize,
+			OutputPath: actualPath,
 		}
 	}
 }
